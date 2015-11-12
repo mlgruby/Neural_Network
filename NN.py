@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-import pandas as pd
-from matplotlib.pyplot import plot
-from sklearn.linear_model import LinearRegression as lm
+
 
 # class for neural network
 class Neural_Network:
@@ -92,92 +90,4 @@ class Neural_Network:
         tMSE = (1.0/X_test.shape[0])*sum((Y_test-yHat)**2)
         return tMSE
         
-########################### Class Implementation ends here ####################################
 
-# General Functions
-def normalize(col):
-    # return normalized column
-    return ((col - np.mean(col))/np.std(col))
-    
-def testTrainSplit(DF, label, train_size):
-    np.random.seed(0331)
-    trainNumber = DF.shape[0]*train_size
-    DF.apply(np.random.shuffle, axis=0)
-    Y = (DF[label]).reshape(DF.shape[0], 1)
-    X = (DF.drop(label,1)).values
-    train_X = X[:trainNumber,:]
-    test_X = X[trainNumber:,:]
-    train_Y = Y[:trainNumber,:]
-    test_Y = Y[trainNumber:,:]
-    
-    return train_X, train_Y, test_X, test_Y
-    
-# reading Auto data
-auto = pd.read_csv('Auto.csv', usecols=(0,3,4,6,7))
-auto.head()
-# Linear Regrssion
-train_X, train_Y, test_X, test_Y = testTrainSplit(auto, 'mpg', 0.5)
-lmModel = lm(normalize=False)
-lmModel.fit(train_X, train_Y)
-yHat = lmModel.predict(test_X)
-testMse = (1.0/test_X.shape[0])*np.sum(test_Y - yHat)
-trainMse = (1.0/train_X.shape[0])*np.sum(train_Y - lmModel.predict(train_X))
-
-# creating dummy variable for origin ---> origin1, origin2, origin3
-for element in auto['origin'].unique():
-    auto['origin'+str(element)] = (auto['origin'] == element).astype(int)
-
-auto = auto.drop('origin', 1) # removing main origin column
-auto.head()
-
-#auto = auto.apply(normalize, 1)
-#test and train split
-train_X, train_Y, test_X, test_Y = testTrainSplit(auto, 'mpg', 0.5)
-
-# normalizing auto train_X and test_X
-train_X = ((pd.DataFrame(train_X)).apply(normalize, 1)).values
-test_X = ((pd.DataFrame(test_X)).apply(normalize, 1)).values
-
-NN = Neural_Network(6,3,1) # Neural Network object - Initializing weights
-NN.train(train_X, train_Y, 0.1, 100, 0.03) # Training Neural Network
-NN.trainStop(train_X, train_Y, 0.7, 0.03) # Automatically stops if last 10 MSE dosen't changes by 1%
-NN.testMSE(test_X, test_Y) # test MSE
-NN.predict(test_X) # Test Prediction
-
-plot(NN.mses)
-
-#############################################################################
-# Below code is breaking somewhere ------> Need to check
-# Cross validating function
-#def cv(X, Y, folds, model_object):
-#    subset_size = len(X)/folds
-#    mses = np.zeros([folds])
-#    for i in np.arange(folds):
-#        testing_round_X = X[i*subset_size:][:subset_size]
-#        training_round_X = X[:i*subset_size] + X[(i+1)*subset_size:]
-#        testing_round_Y = Y[i*subset_size:][:subset_size]
-#        training_round_Y = Y[:i*subset_size] + Y[(i+1)*subset_size:]
-#        model_object.train(training_round_X, training_round_Y, 0.1, 100, 0.3)
-#        mses[i] = model_object.testMSE(testing_round_X, testing_round_Y)
-#    return np.mean(mses)
-#    
-#cvmse = np.zeros([10])
-#for m in np.arange(10)+1:
-#    NN = Neural_Network(6,m,1)
-#    cvmse[m] = cv(train_X, train_Y, 4, NN)
-#    
-###########################################################################   
-
-# 100 times model
-mseTest = np.zeros([100])
-epoch = 30
-eta = 0.1
-c = 0.3
-NN = Neural_Network(6,3,1)
-for i in range(100):
-    NN.train(train_X, train_Y, eta, epoch, c)
-    mseTest[i] = NN.testMSE(test_X, test_Y)
-
-fig = plot.figure(1, figsize=(9, 6))
-ax = fig.add_subplot(111)
-ax.boxplot(mseTest)
