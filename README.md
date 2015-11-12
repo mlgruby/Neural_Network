@@ -1,2 +1,3 @@
 # Neural_Network
-Neural Network with One Hidden Layer
+Python Implementation Neural_Network with one hidden layer and Bacpropagation as a learning method. 
+numpy is used for this implementation. 
